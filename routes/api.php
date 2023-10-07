@@ -21,8 +21,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get('/', function (Request $request) {
 
-//  return ( (new  WeatherService())->sendWeatherInfo("weatherbit", "Tashkent", "email", 'telegram'));
+ return ( (new  WeatherService())->sendWeatherInfo("weatherbit", "Tashkent", "email", 'telegram'));
   //return ( (new  WeatherService())->sendWeatherInfo("weather-api", "Tashkent", "123", 'telegram'));
- return ( (new  WeatherService())->sendWeatherInfo("weather-stack", "Tashkent", "email", 'telegram'));
+// return ( (new  WeatherService())->sendWeatherInfo("weather-stack", "Tashkent", "email", 'telegram'));
 
 });

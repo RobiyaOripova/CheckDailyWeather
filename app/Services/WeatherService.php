@@ -7,14 +7,14 @@ use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
-class WeatherService
+class WeatherService extends BaseService
 {
-
     public function sendWeatherInfo($provider, $city, $to, $channel)
     {
         $weatherbit = config('system.weatherbit_url') . "&city=" . $city;
         $weatherApi = config('system.weather_api_url') . "&q=" . $city;
         $weatherStack = config('system.weather_stack_url') . "&query=" . $city;
+
         $url = match ($provider) {
             'weatherbit' => $weatherbit,
             'weather-api' => $weatherApi,
@@ -24,68 +24,45 @@ class WeatherService
         $response = Http::get($url);
         try {
             if ($response->status() == 200) {
+
                 $json = $response->json();
 
                 switch ($provider) {
-                    case 'weatherbit':
+                    case self::WEATHER_BIT:
                         $data = $json['data'][0];
-                        $measure = ['m/s', 'mm/hr', 'mb'];
-                        $resData = $this->getResponseValues(
-                            $data['app_temp'],
-                            $data['pres'],
-                            $data['precip'],
-                            $data['wind_spd'],
-                            $data['weather']['description'],
-                            $data['timezone'],
-                        );
+                        $measure = ["c", 'm/s', 'mm/hr', 'mb'];
+                        $args = ['app_temp', 'pres', 'precip', 'wind_spd', ['weather', 'description'], 'timezone'];
+                        $text = $this->infoText($data, null, $args, $measure, $provider)['text'];
+                        $emailData = $this->infoText($data, null, $args, $measure, $provider)['values'];
                         break;
-                    case 'weather-api';
+                    case self::WEATHER_API:
                         $data = $json['current'];
-                        $measure = ['mph', 'in', 'in'];
-                        $resData = $this->getResponseValues(
-                            $data['temp_c'],
-                            $data['pressure_in'],
-                            $data['precip_in'],
-                            $data['wind_mph'],
-                            $data['condition']['text'],
-                            $json['location']['tz_id'],
-                        );
+                        $data2 = $json;
+                        $measure = ["c", 'mph', 'in', 'in'];
+                        $args = ['temp_c', 'pressure_in', 'precip_in', 'wind_mph', ['condition', 'text'], ['location', 'tz_id']];
+                        $text = $this->infoText($data, $data2, $args, $measure, $provider)['text'];
+                        $emailData = $this->infoText($data, $data2, $args, $measure, $provider)['values'];
                         break;
                     default:
                         $data = $json['current'];
-                        $measure = ['kmph', 'mm', 'mb'];
-                        $resData = $this->getResponseValues(
-                            $data['temperature'],
-                            $data['pressure'],
-                            $data['precip'],
-                            $data['wind_speed'],
-                            $data['weather_descriptions'][0],
-                            $json['location']['timezone_id'],
-                        );
+                        $data2 = $json;
+                        $measure = ["c", 'kmph', 'mm', 'mb'];
+                        $args = ['temperature', 'pressure', 'precip', 'wind_speed', ['weather_descriptions', 0], ['location', 'timezone_id']];
+                        $text = $this->infoText($data, $data2, $args, $measure, $provider)['text'];
+                        $emailData = $this->infoText($data, $data2, $args, $measure, $provider)['values'];
                 }
-                switch ($channel){
-                    case 'telegram':
-                        $txt = "<b>Timezone:</b> " . $resData[5] . "\n\n" .
-                            "<b>Temperature:</b> " . $resData[0] . " C" . "\n\n" .
-                            "<b>Pressure:</b> " . $resData[1] . " " . $measure[0] . "\n\n" .
-                            "<b>Precip:</b> " . $resData[2] . " " . $measure[1] . "\n\n" .
-                            "<b>Wind:</b> " . $resData[3] . " " . $measure[2] . "\n\n" .
-                            "<b>Title:</b> " . $resData[4] . "\n\n";
-
+                switch ($channel) {
+                    case self::TELEGRAM:
+                        $txt = $text;
                         $txt = urlencode($txt);
-                        $url = "https://api.telegram.org/bot6144305316:AAF-OkUF8zRDSgKsAvNXxBvNYlwU4LCe5Lc/sendMessage?chat_id=$to&text=$txt" . "&parse_mode=html";
+                        $url = config('system.telegram_bot_url') . "&chat_id=$to&text=$txt";
                         file_get_contents($url);
                         break;
-                    case 'email':
-                        Mail::to($to)->send(new SendWeather($resData, $measure));
+                    case self::EMAIL:
+                        Mail::to($to)->send(new SendWeather($emailData, $measure));
                         break;
                     default:
-                       echo "Timezone: " . $resData[5] . "\n\n" .
-                            "Temperature: " . $resData[0] . " C" . "\n\n" .
-                            "Pressure: " . $resData[1] . " " . $measure[0] . "\n\n" .
-                            "Precip: " . $resData[2] . " " . $measure[1] . "\n\n" .
-                            "Wind: " . $resData[3] . " " . $measure[2] . "\n\n" .
-                            "Title: " . $resData[4] . "\n\n";
+                        echo $text;
                 }
 
             } else {
@@ -96,13 +73,6 @@ class WeatherService
             print_r($exception->getMessage());
         }
     }
-    public function getResponseValues($temperature, $pressure, $precip, $wind, $title, $tz): array
-    {
-        $values = [];
-        foreach (func_get_args() as $arg) {
-            $values[] = $arg;
-        }
-        return $values;
-    }
+
 
 }
