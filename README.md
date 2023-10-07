@@ -2,9 +2,9 @@ php artisan weather Tashkent --telegram=12345678910
 
   Select a provider  
 
- │ › ● weatherbit                                               │
+ │ › ● weatherbit                                               
 
- │   ○ weather-api                                              │
+ │   ○ weather-api                                              
 
- │   ○ weather-stack                                            │
+ │   ○ weather-stack                                            
 
