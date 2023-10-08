@@ -64,7 +64,7 @@ class WeatherService extends BaseService
 
                 $infoText = $this->infoText($firstData, $secondData, $jsonData, $units, $this->provider);
                 $text = $infoText['text'];
-                $emailData = $infoText['values'];
+                $emailData = $infoText['data'];
 
                 switch ($this->channel) {
                     case self::TELEGRAM:

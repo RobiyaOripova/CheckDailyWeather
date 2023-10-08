@@ -54,7 +54,7 @@ class BaseService implements WeatherInterface
         }
         return [
             'text' => $text,
-            'values' => $collectData
+            'data' => $collectData
         ];
 
     }
