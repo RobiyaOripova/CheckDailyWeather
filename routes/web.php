@@ -14,5 +14,5 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('weather', ['info' => ['time','ggg','ffff','sdss','dsdsds','sdsd'], 'measure' => 'ffff']);
+    return view('welcome');
 });
