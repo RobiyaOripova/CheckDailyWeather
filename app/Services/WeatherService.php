@@ -14,7 +14,7 @@ class WeatherService extends BaseService
     public string $city;
     public $to;
     public ?string $channel;
-    public $data2;
+
 
     public function __construct($provider, $city, $to, $channel)
     {
@@ -44,25 +44,25 @@ class WeatherService extends BaseService
 
                 switch ($this->provider) {
                     case self::WEATHER_BIT:
-                        $data = $json['data'][0];
-                        $this->data2 = null;
-                        $measure = ["c", 'm/s', 'mm/hr', 'mb'];
-                        $args = ['app_temp', 'pres', 'precip', 'wind_spd', ['weather', 'description'], 'timezone'];
+                        $firstData = $json['data'][0];
+                        $secondData = null;
+                        $units = ["c", 'm/s', 'mm/hr', 'mb'];
+                        $jsonData = ['app_temp', 'pres', 'precip', 'wind_spd', ['weather', 'description'], 'timezone'];
                         break;
                     case self::WEATHER_API:
-                        $data = $json['current'];
-                        $this->data2 = $json;
-                        $measure = ["c", 'mph', 'in', 'in'];
-                        $args = ['temp_c', 'pressure_in', 'precip_in', 'wind_mph', ['condition', 'text'], ['location', 'tz_id']];
+                        $firstData = $json['current'];
+                        $secondData = $json;
+                        $units = ["c", 'mph', 'in', 'in'];
+                        $jsonData = ['temp_c', 'pressure_in', 'precip_in', 'wind_mph', ['condition', 'text'], ['location', 'tz_id']];
                         break;
                     default:
-                        $data = $json['current'];
-                        $this->data2 = $json;
-                        $measure = ["c", 'kmph', 'mm', 'mb'];
-                        $args = ['temperature', 'pressure', 'precip', 'wind_speed', ['weather_descriptions', 0], ['location', 'timezone_id']];
+                        $firstData = $json['current'];
+                        $secondData = $json;
+                        $units = ["c", 'kmph', 'mm', 'mb'];
+                        $jsonData = ['temperature', 'pressure', 'precip', 'wind_speed', ['weather_descriptions', 0], ['location', 'timezone_id']];
                 }
 
-                $infoText = $this->infoText($data, $this->data2, $args, $measure, $this->provider);
+                $infoText = $this->infoText($firstData, $secondData, $jsonData, $units, $this->provider);
                 $text = $infoText['text'];
                 $emailData = $infoText['values'];
 
@@ -74,7 +74,7 @@ class WeatherService extends BaseService
                         file_get_contents($url);
                         break;
                     case self::EMAIL:
-                        Mail::to($this->to)->send(new SendWeather($emailData, $measure));
+                        Mail::to($this->to)->send(new SendWeather($emailData, $units));
                         break;
                     default:
                         echo $text;

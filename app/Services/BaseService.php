@@ -11,50 +11,50 @@ class BaseService implements WeatherInterface
     const WEATHER_STACK = 'weather-stack';
     const TELEGRAM = 'telegram';
     const EMAIL = 'email';
-    public $json;
+    public $info;
 
 
-    public function dataHelper($args, $arg, $provider, $data, $data2)
+    public function dataHelper($jsonData, $data, $provider, $firstData, $secondData)
     {
-        if ($arg == end($args)) {
+        if ($data == end($jsonData)) {
             if (($provider == self::WEATHER_API || $provider == self::WEATHER_STACK)) {
-                $this->json = $data2;
+                $this->info = $secondData;
             }
         } else {
-            $this->json = $data;
+            $this->info = $firstData;
         }
-        return $this->json;
+        return $this->info;
     }
 
-    public function infoText($data, $data2, $args, $measure, $provider): array
+    public function infoText($firstData, $secondData, $jsonData, $units, $provider): array
     {
         $titles = ['Temperature', 'Pressure', 'Precip', 'Wind', 'Title', 'Timezone'];
         $text = '';
-        $count = 0;
-        $count2 = 0;
-        $values = [];
-        foreach ($args as $arg) {
-            $json = $this->dataHelper($args, $arg, $provider, $data, $data2);
-            $title = json_encode($titles[$count]);
-            if ($count2 !== 4) {
-                $m = $measure[$count2];
-                $count2++;
+        $titleCount = 0;
+        $unitCount = 0;
+        $collectData = [];
+        foreach ($jsonData as $data) {
+            $helper = $this->dataHelper($jsonData, $data, $provider, $firstData, $secondData);
+            $title = json_encode($titles[$titleCount]);
+            if ($unitCount !== 4) {
+                $unit = $units[$unitCount];
+                $unitCount++;
             } else {
-                $m = "";
+                $unit = "";
             }
-            if ((is_array($arg))) {
-                $text .= $title . ": " . json_encode($json[$arg[0]][$arg[1]]) . " " . $m . "\n\n";
-                $values[] = $json[$arg[0]][$arg[1]];
+            if ((is_array($data))) {
+                $text .= $title . ": " . json_encode($helper[$data[0]][$data[1]]) . " " . $unit . "\n\n";
+                $collectData[] = $helper[$data[0]][$data[1]];
             } else {
-                $text .= $title . ": " . json_encode($json[$arg]) . " " . $m . "\n\n";
-                $values[] = $json[$arg];
+                $text .= $title . ": " . json_encode($helper[$data]) . " " . $unit . "\n\n";
+                $collectData[] = $helper[$data];
             }
 
-            $count++;
+            $titleCount++;
         }
         return [
             'text' => $text,
-            'values' => $values
+            'values' => $collectData
         ];
 
     }
