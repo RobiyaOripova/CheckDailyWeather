@@ -42,9 +42,9 @@ class Weather extends Command
         $telegram = $this->option('telegram');
 
         if (!empty($email)) {
-            (new  WeatherService($provider, $city, $email, 'email'))->sendWeatherInfo();
+            (new  WeatherService($provider, $city, $email, BaseService::EMAIL))->sendWeatherInfo();
         } elseif (!empty($telegram)) {
-            (new  WeatherService($provider, $city, $telegram, 'telegram'))->sendWeatherInfo();
+            (new  WeatherService($provider, $city, $telegram, BaseService::TELEGRAM))->sendWeatherInfo();
         } else {
             (new  WeatherService($provider, $city, null, null))->sendWeatherInfo();
         }
