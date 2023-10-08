@@ -9,15 +9,30 @@ use Illuminate\Support\Facades\Mail;
 
 class WeatherService extends BaseService
 {
-    public function sendWeatherInfo($provider, $city, $to, $channel)
-    {
-        $weatherbit = config('system.weatherbit_url') . "&city=" . $city;
-        $weatherApi = config('system.weather_api_url') . "&q=" . $city;
-        $weatherStack = config('system.weather_stack_url') . "&query=" . $city;
 
-        $url = match ($provider) {
-            'weatherbit' => $weatherbit,
-            'weather-api' => $weatherApi,
+    public string $provider;
+    public string $city;
+    public $to;
+    public ?string $channel;
+    public $data2;
+
+    public function __construct($provider, $city, $to, $channel)
+    {
+        $this->provider = $provider;
+        $this->city = $city;
+        $this->to = $to;
+        $this->channel = $channel;
+    }
+
+    public function sendWeatherInfo(): void
+    {
+        $weatherbit = config('system.weatherbit_url') . "&city=" . $this->city;
+        $weatherApi = config('system.weather_api_url') . "&q=" . $this->city;
+        $weatherStack = config('system.weather_stack_url') . "&query=" . $this->city;
+
+        $url = match ($this->provider) {
+            self::WEATHER_BIT => $weatherbit,
+            self::WEATHER_API => $weatherApi,
             default => $weatherStack,
         };
 
@@ -27,39 +42,39 @@ class WeatherService extends BaseService
 
                 $json = $response->json();
 
-                switch ($provider) {
+                switch ($this->provider) {
                     case self::WEATHER_BIT:
                         $data = $json['data'][0];
+                        $this->data2 = null;
                         $measure = ["c", 'm/s', 'mm/hr', 'mb'];
                         $args = ['app_temp', 'pres', 'precip', 'wind_spd', ['weather', 'description'], 'timezone'];
-                        $text = $this->infoText($data, null, $args, $measure, $provider)['text'];
-                        $emailData = $this->infoText($data, null, $args, $measure, $provider)['values'];
                         break;
                     case self::WEATHER_API:
                         $data = $json['current'];
-                        $data2 = $json;
+                        $this->data2 = $json;
                         $measure = ["c", 'mph', 'in', 'in'];
                         $args = ['temp_c', 'pressure_in', 'precip_in', 'wind_mph', ['condition', 'text'], ['location', 'tz_id']];
-                        $text = $this->infoText($data, $data2, $args, $measure, $provider)['text'];
-                        $emailData = $this->infoText($data, $data2, $args, $measure, $provider)['values'];
                         break;
                     default:
                         $data = $json['current'];
-                        $data2 = $json;
+                        $this->data2 = $json;
                         $measure = ["c", 'kmph', 'mm', 'mb'];
                         $args = ['temperature', 'pressure', 'precip', 'wind_speed', ['weather_descriptions', 0], ['location', 'timezone_id']];
-                        $text = $this->infoText($data, $data2, $args, $measure, $provider)['text'];
-                        $emailData = $this->infoText($data, $data2, $args, $measure, $provider)['values'];
                 }
-                switch ($channel) {
+
+                $infoText = $this->infoText($data, $this->data2, $args, $measure, $this->provider);
+                $text = $infoText['text'];
+                $emailData = $infoText['values'];
+
+                switch ($this->channel) {
                     case self::TELEGRAM:
                         $txt = $text;
                         $txt = urlencode($txt);
-                        $url = config('system.telegram_bot_url') . "&chat_id=$to&text=$txt";
+                        $url = config('system.telegram_bot_url') . "&chat_id=$this->to&text=$txt";
                         file_get_contents($url);
                         break;
                     case self::EMAIL:
-                        Mail::to($to)->send(new SendWeather($emailData, $measure));
+                        Mail::to($this->to)->send(new SendWeather($emailData, $measure));
                         break;
                     default:
                         echo $text;

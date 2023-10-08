@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Services\BaseService;
 use App\Services\WeatherService;
 use Illuminate\Console\Command;
 use function Laravel\Prompts\select;
@@ -20,7 +21,7 @@ class Weather extends Command
      *
      * @var string
      */
-    protected $description = 'Command description';
+    protected $description = 'Check Daily weather';
 
     /**
      * Execute the console command.
@@ -30,22 +31,22 @@ class Weather extends Command
         $provider = select(
             label: 'Select a provider ',
             options: [
-                'weatherbit' => 'weatherbit',
-                'weather-api' => 'weather-api',
-                'weather-stack' => 'weather-stack'
+                BaseService::WEATHER_BIT => BaseService::WEATHER_BIT,
+                BaseService::WEATHER_API => BaseService::WEATHER_API,
+                BaseService::WEATHER_STACK => BaseService::WEATHER_STACK
             ],
-            default: 'weatherbit'
+            default: BaseService::WEATHER_BIT
         );
         $city = $this->argument('city');
         $email = $this->option('email');
         $telegram = $this->option('telegram');
 
         if (!empty($email)) {
-            (new  WeatherService())->sendWeatherInfo($provider, $city, $email, 'email');
+            (new  WeatherService($provider, $city, $email, 'email'))->sendWeatherInfo();
         } elseif (!empty($telegram)) {
-            (new  WeatherService())->sendWeatherInfo($provider, $city, $telegram, 'telegram');
+            (new  WeatherService($provider, $city, $telegram, 'telegram'))->sendWeatherInfo();
         } else {
-            (new  WeatherService())->sendWeatherInfo($provider, $city, null, null);
+            (new  WeatherService($provider, $city, null, null))->sendWeatherInfo();
         }
 
     }

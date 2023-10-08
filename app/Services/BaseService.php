@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
-class BaseService
+use App\Interfaces\WeatherInterface;
+
+class BaseService implements WeatherInterface
 {
-    public $json;
     const WEATHER_BIT = 'weatherbit';
     const WEATHER_API = 'weather-api';
     const WEATHER_STACK = 'weather-stack';
     const TELEGRAM = 'telegram';
     const EMAIL = 'email';
+    public $json;
 
 
     public function dataHelper($args, $arg, $provider, $data, $data2)
@@ -24,7 +26,7 @@ class BaseService
         return $this->json;
     }
 
-    public function infoText($data, $data2, $args, $measure, $provider)
+    public function infoText($data, $data2, $args, $measure, $provider): array
     {
         $titles = ['Temperature', 'Pressure', 'Precip', 'Wind', 'Title', 'Timezone'];
         $text = '';
